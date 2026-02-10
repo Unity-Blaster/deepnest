@@ -58,7 +58,7 @@ interface HttpClient {
   post(
     url: string,
     data: Buffer,
-    options: { headers: Record<string, string>; responseType: string }
+    options: { headers: Record<string, string>; responseType: string },
   ): Promise<{ data: string }>;
 }
 
@@ -69,7 +69,7 @@ interface FormDataLike {
   append(
     name: string,
     value: Buffer | string,
-    options?: { filename?: string; contentType?: string }
+    options?: { filename?: string; contentType?: string },
   ): void;
   getBuffer(): Buffer;
   getHeaders(): Record<string, string>;
@@ -86,7 +86,9 @@ interface FormDataConstructor {
  * Config getter interface
  */
 interface ConfigGetter {
-  getSync<K extends keyof UIConfig>(key?: K): K extends keyof UIConfig ? UIConfig[K] : UIConfig;
+  getSync<K extends keyof UIConfig>(
+    key?: K,
+  ): K extends keyof UIConfig ? UIConfig[K] : UIConfig;
 }
 
 /**
@@ -133,12 +135,10 @@ export type ExportFormat = "svg" | "dxf" | "json";
 /**
  * File filters for export dialogs
  */
-const SVG_FILE_FILTERS: FileFilter[] = [
-  { name: "SVG", extensions: ["svg"] }
-];
+const SVG_FILE_FILTERS: FileFilter[] = [{ name: "SVG", extensions: ["svg"] }];
 
 const DXF_FILE_FILTERS: FileFilter[] = [
-  { name: "DXF/DWG", extensions: ["dxf", "dwg"] }
+  { name: "DXF/DWG", extensions: ["dxf", "dwg"] },
 ];
 
 /**
@@ -403,7 +403,10 @@ export class ExportService {
     }
 
     // Ensure .dxf or .dwg extension
-    if (!fileName.toLowerCase().endsWith(".dxf") && !fileName.toLowerCase().endsWith(".dwg")) {
+    if (
+      !fileName.toLowerCase().endsWith(".dxf") &&
+      !fileName.toLowerCase().endsWith(".dwg")
+    ) {
       fileName = fileName + ".dxf";
     }
 
@@ -417,7 +420,9 @@ export class ExportService {
 
     try {
       // Generate SVG with DXF scaling
-      const svgContent = this.generateSvgExport(selected, { forDxfConversion: true });
+      const svgContent = this.generateSvgExport(selected, {
+        forDxfConversion: true,
+      });
 
       const formData = new this.FormData();
       formData.append("fileUpload", Buffer.from(svgContent), {
@@ -443,7 +448,7 @@ export class ExportService {
         const jsonErr = JSON.parse(body) as { error_id: string };
         message(
           `There was an Error while converting: ${jsonErr.error_id}<br>Please use this code to open an issue on github.com/deepnest-next/deepnest`,
-          true
+          true,
         );
         return false;
       }
@@ -462,12 +467,12 @@ export class ExportService {
         const jsonErr = JSON.parse(errorData) as { error_id: string };
         message(
           `There was an Error while converting: ${jsonErr.error_id}<br>Please use this code to open an issue on github.com/deepnest-next/deepnest`,
-          true
+          true,
         );
       } else {
         message(
           `Could not contact file conversion server: ${JSON.stringify(err)}<br>Please use this code to open an issue on github.com/deepnest-next/deepnest`,
-          true
+          true,
         );
       }
       return false;
@@ -485,7 +490,7 @@ export class ExportService {
    */
   generateSvgExport(
     nestResult: SelectableNestingResult,
-    options: ExportOptions = {}
+    options: ExportOptions = {},
   ): string {
     if (!this.deepNest || !this.config) {
       throw new Error("DeepNest or config not available");
@@ -497,16 +502,28 @@ export class ExportService {
     let sheetNumber = 0;
 
     const parts = this.deepNest.parts;
-    const exportWithSheetBoundaries = !!this.config.getSync("exportWithSheetBoundboarders");
-    const exportWithSheetsSpace = !!this.config.getSync("exportWithSheetsSpace");
-    const exportWithSheetsSpaceValue = this.config.getSync("exportWithSheetsSpaceValue") || 0;
+    const exportWithSheetBoundaries = !!this.config.getSync(
+      "exportWithSheetBoundboarders",
+    );
+    const exportWithSheetsSpace = !!this.config.getSync(
+      "exportWithSheetsSpace",
+    );
+    const exportWithSheetsSpaceValue =
+      this.config.getSync("exportWithSheetsSpaceValue") || 0;
+
+    // Create a container group for all sheets
+    const containerGroup = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "g",
+    );
+    svg.appendChild(containerGroup);
 
     // Process each sheet placement
     (nestResult.placements as SheetGroup[]).forEach((s) => {
       sheetNumber++;
 
       const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      svg.appendChild(group);
+      containerGroup.appendChild(group);
 
       // Add sheet boundary if configured
       if (exportWithSheetBoundaries) {
@@ -518,7 +535,7 @@ export class ExportService {
       // Position the group
       group.setAttribute(
         "transform",
-        `translate(${-sheetBounds.x} ${svgHeight - sheetBounds.y})`
+        `translate(${-sheetBounds.x} ${svgHeight - sheetBounds.y})`,
       );
 
       // Track maximum width
@@ -529,7 +546,10 @@ export class ExportService {
       // Add each part placement
       s.sheetplacements.forEach((p) => {
         const part = parts[p.source];
-        const partGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        const partGroup = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "g",
+        );
 
         // Clone all SVG elements from the part
         part.svgelements.forEach((e) => {
@@ -547,12 +567,45 @@ export class ExportService {
           partGroup.appendChild(node);
         });
 
+        // Add text label
+        const text = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "text",
+        );
+        const cx = part.bounds.x + part.bounds.width / 2;
+        const cy = part.bounds.y + part.bounds.height / 2;
+
+        // Calculate dimensions
+        const scale = this.config!.getSync("scale") || 72;
+        const units = this.config!.getSync("units");
+        const unitScale = units === "mm" ? 25.4 : 1;
+        const w = (part.bounds.width / scale) * unitScale;
+        const h = (part.bounds.height / scale) * unitScale;
+
+        const textContent = `${p.source} ${w.toFixed(1)}x${h.toFixed(1)}`;
+        text.textContent = textContent;
+
+        // Dynamic font size: target 80% of width
+        const charCount = textContent.length;
+        const fontSize = (part.bounds.width * 0.8) / (0.5 * charCount);
+
+        text.setAttribute("x", String(cx));
+        text.setAttribute("y", String(cy));
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("dominant-baseline", "middle");
+        text.setAttribute("fill", "#000000"); // Black for export
+        text.setAttribute("font-family", "Arial, sans-serif");
+        text.setAttribute("font-size", String(fontSize));
+        text.setAttribute("transform", `rotate(${-p.rotation} ${cx} ${cy})`); // Counter-rotate to keep text horizontal
+
+        partGroup.appendChild(text);
+
         group.appendChild(partGroup);
 
         // Position and rotate the part
         partGroup.setAttribute(
           "transform",
-          `translate(${p.x} ${p.y}) rotate(${p.rotation})`
+          `translate(${p.x} ${p.y}) rotate(${p.rotation})`,
         );
         partGroup.setAttribute("id", String(p.id));
       });
@@ -561,10 +614,18 @@ export class ExportService {
       svgHeight += sheetBounds.height;
 
       // Add spacing between sheets (except after last sheet)
-      if (exportWithSheetsSpace && sheetNumber < (nestResult.placements as SheetGroup[]).length) {
+      if (
+        exportWithSheetsSpace &&
+        sheetNumber < (nestResult.placements as SheetGroup[]).length
+      ) {
         svgHeight += exportWithSheetsSpaceValue;
       }
     });
+
+    // Apply Y-axis offset for DXF export to set bottom-left as (0,0)
+    if (options.forDxfConversion) {
+      containerGroup.setAttribute("transform", `translate(0, ${-svgHeight})`);
+    }
 
     // Calculate final dimensions with scaling
     this.applyDimensions(svg, svgWidth, svgHeight, options);
@@ -600,7 +661,7 @@ export class ExportService {
     svg: SVGSVGElement,
     width: number,
     height: number,
-    options: ExportOptions
+    options: ExportOptions,
   ): void {
     if (!this.config) {
       return;
@@ -634,14 +695,15 @@ export class ExportService {
    */
   private applyLineMerging(
     svg: SVGSVGElement,
-    nestResult: SelectableNestingResult
+    nestResult: SelectableNestingResult,
   ): void {
     if (!this.config || !this.svgParser) {
       return;
     }
 
     const mergeLines = this.config.getSync("mergeLines");
-    const mergedLength = (nestResult as unknown as { mergedLength?: number }).mergedLength;
+    const mergedLength = (nestResult as unknown as { mergedLength?: number })
+      .mergedLength;
 
     if (mergeLines && mergedLength && mergedLength > 0) {
       const curveTolerance = this.config.getSync("curveTolerance");
@@ -653,10 +715,14 @@ export class ExportService {
       this.svgParser.mergeOverlap(svg, 0.1 * curveTolerance);
       this.svgParser.mergeLines(svg);
 
-      // Set stroke and fill for all non-group, non-image elements
+      // Set stroke and fill for all non-group, non-image, non-text elements
       const elements = Array.prototype.slice.call(svg.children) as Element[];
       elements.forEach((e) => {
-        if (e.tagName !== "g" && e.tagName !== "image") {
+        if (
+          e.tagName !== "g" &&
+          e.tagName !== "image" &&
+          e.tagName !== "text"
+        ) {
           e.setAttribute("fill", "none");
           e.setAttribute("stroke", "#000000");
         }
@@ -738,7 +804,9 @@ export class ExportService {
    * @param options - Optional configuration options
    * @returns New ExportService instance
    */
-  static create(options?: ConstructorParameters<typeof ExportService>[0]): ExportService {
+  static create(
+    options?: ConstructorParameters<typeof ExportService>[0],
+  ): ExportService {
     return new ExportService(options);
   }
 }
@@ -749,7 +817,7 @@ export class ExportService {
  * @returns New ExportService instance
  */
 export function createExportService(
-  options?: ConstructorParameters<typeof ExportService>[0]
+  options?: ConstructorParameters<typeof ExportService>[0],
 ): ExportService {
   return ExportService.create(options);
 }

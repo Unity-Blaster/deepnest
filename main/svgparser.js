@@ -18,7 +18,7 @@ export class SvgParser {
 		this.svgRoot;
 
 		// elements that can be imported
-		this.allowedElements = ['svg','circle','ellipse','path','polygon','polyline','rect','image','line'];
+		this.allowedElements = ['svg','circle','ellipse','path','polygon','polyline','rect','image','line','text'];
 
 		// elements that can be polygonified
 		this.polygonElements = ['svg','circle','ellipse','path','polygon','polyline','rect'];
@@ -1239,6 +1239,10 @@ export class SvgParser {
 					}
 
 					element.removeAttribute('transform');
+				break;
+
+				case 'text':
+					element.setAttribute('transform', transformString);
 				break;
 			}
 		}

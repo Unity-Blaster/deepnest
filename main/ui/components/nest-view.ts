@@ -42,15 +42,12 @@ interface NestViewRactiveInstance {
   /** Set a value in the data context */
   set<K extends keyof NestViewData>(
     keypath: K,
-    value: NestViewData[K]
+    value: NestViewData[K],
   ): Promise<void>;
   /** Register an event handler with Ractive-specific event signature */
   on(
     eventName: string,
-    handler: (
-      event: RactiveEvent,
-      ...args: unknown[]
-    ) => boolean | void
+    handler: (event: RactiveEvent, ...args: unknown[]) => boolean | void,
   ): void;
 }
 
@@ -230,21 +227,24 @@ export class NestViewService {
       }
 
       // Reset class (make visible)
-      groupElement.setAttribute("class", `${CSS_CLASSES.SHEET} ${CSS_CLASSES.ACTIVE}`);
+      groupElement.setAttribute(
+        "class",
+        `${CSS_CLASSES.SHEET} ${CSS_CLASSES.ACTIVE}`,
+      );
 
       const sheetBounds: Bounds = this.deepNest.parts[s.sheet].bounds;
       groupElement.setAttribute(
         "transform",
-        createTranslate(-sheetBounds.x, svgHeight - sheetBounds.y)
+        createTranslate(-sheetBounds.x, svgHeight - sheetBounds.y),
       );
       if (svgWidth < sheetBounds.width) {
         svgWidth = sheetBounds.width;
       }
 
       s.sheetplacements.forEach((p: SheetPlacementWithMerged) => {
+        const part: Part = this.deepNest.parts[p.source];
         let partElement = getElement<SVGGElement>(`#part${p.id}`);
         if (!partElement) {
-          const part: Part = this.deepNest.parts[p.source];
           const partGroup = createSvgElement("g");
           partGroup.setAttribute("id", `part${p.id}`);
 
@@ -261,6 +261,38 @@ export class NestViewService {
             partGroup.appendChild(node);
           });
 
+          // Add text label
+          const text = createSvgElement("text");
+          const cx = part.bounds.x + part.bounds.width / 2;
+          const cy = part.bounds.y + part.bounds.height / 2;
+
+          // Calculate dimensions
+          const scale = this.config.getSync("scale") || 72;
+          const units = this.config.getSync("units");
+          const unitScale = units === "mm" ? 25.4 : 1;
+          const w = (part.bounds.width / scale) * unitScale;
+          const h = (part.bounds.height / scale) * unitScale;
+
+          const textContent = `[${p.source}] ${w.toFixed(0)}x${h.toFixed(0)}${units}`;
+          text.textContent = textContent;
+
+          // Dynamic font size: target 80% of width
+          // approx width = fontSize * 0.5 * charCount (using 0.5 for safer fit)
+          const charCount = textContent.length;
+          const fontSize = (part.bounds.width * 0.8) / (0.5 * charCount);
+
+          text.setAttribute("x", String(cx));
+          text.setAttribute("y", String(cy));
+          text.setAttribute("text-anchor", "middle");
+          text.setAttribute("dominant-baseline", "middle");
+          text.setAttribute("fill", "white");
+          text.setAttribute("font-family", "Arial, sans-serif");
+          text.setAttribute("font-size", String(fontSize));
+          text.setAttribute("transform", `rotate(${-p.rotation} ${cx} ${cy})`); // Counter-rotate to keep text horizontal
+          text.setAttribute("style", "pointer-events: none;"); // Click through to part
+
+          partGroup.appendChild(text);
+
           svg.appendChild(partGroup);
 
           // Create hatch pattern if it doesn't exist
@@ -270,7 +302,7 @@ export class NestViewService {
             pattern.setAttribute("patternUnits", "userSpaceOnUse");
 
             let psize = parseInt(
-              String(this.deepNest.parts[s.sheet].bounds.width / 120)
+              String(this.deepNest.parts[s.sheet].bounds.width / 120),
             );
             psize = psize || 10;
 
@@ -280,12 +312,12 @@ export class NestViewService {
             const path = createSvgElement("path");
             path.setAttribute(
               "d",
-              `M-1,1 l2,-2 M0,${psize} l${psize},-${psize} M${psize - 1},${psize + 1} l2,-2`
+              `M-1,1 l2,-2 M0,${psize} l${psize},-${psize} M${psize - 1},${psize + 1} l2,-2`,
             );
             const hue = 360 * (p.source / this.deepNest.parts.length);
             path.setAttribute(
               "style",
-              `stroke: hsl(${hue}, 100%, 80%) !important; stroke-width:1`
+              `stroke: hsl(${hue}, 100%, 80%) !important; stroke-width:1`,
             );
             pattern.appendChild(path);
 
@@ -302,7 +334,7 @@ export class NestViewService {
           // Reset class (make visible)
           partElement.setAttribute(
             "class",
-            `${CSS_CLASSES.PART} ${CSS_CLASSES.ACTIVE}`
+            `${CSS_CLASSES.PART} ${CSS_CLASSES.ACTIVE}`,
           );
 
           // Position part with CSS transform
@@ -311,9 +343,20 @@ export class NestViewService {
             `transform: ${createCssTransform(
               p.x - sheetBounds.x,
               p.y + svgHeight - sheetBounds.y,
-              p.rotation
-            )}`
+              p.rotation,
+            )}`,
           );
+
+          // Update text rotation to keep it horizontal
+          const text = partElement.querySelector("text");
+          if (text) {
+            const cx = part.bounds.x + part.bounds.width / 2;
+            const cy = part.bounds.y + part.bounds.height / 2;
+            text.setAttribute(
+              "transform",
+              `rotate(${-p.rotation} ${cx} ${cy})`,
+            );
+          }
 
           // Add merge lines if present
           if (p.mergedSegments && p.mergedSegments.length > 0) {
@@ -389,7 +432,7 @@ export class NestViewService {
         }): string {
           const ne = this.get("nests");
           const selected = ne.filter(
-            (n: SelectableNestingResult) => n.selected
+            (n: SelectableNestingResult) => n.selected,
           );
 
           if (selected.length === 0) {
@@ -426,7 +469,7 @@ export class NestViewService {
         }): string {
           const ne = this.get("nests");
           const selected = ne.filter(
-            (n: SelectableNestingResult) => n.selected
+            (n: SelectableNestingResult) => n.selected,
           );
 
           if (selected.length === 0) {
@@ -474,7 +517,7 @@ export class NestViewService {
         // Update UI
         this.update();
         this.displayNest(n);
-      }
+      },
     );
   }
 
@@ -534,7 +577,9 @@ export class NestViewService {
  * @param options - Configuration options
  * @returns New NestViewService instance
  */
-export function createNestViewService(options: NestViewOptions): NestViewService {
+export function createNestViewService(
+  options: NestViewOptions,
+): NestViewService {
   return NestViewService.create(options);
 }
 
@@ -555,7 +600,7 @@ export function createNestViewService(options: NestViewOptions): NestViewService
  */
 export function initializeNestView(
   deepNest: DeepNestInstance,
-  config: ConfigObject
+  config: ConfigObject,
 ): NestViewService {
   const service = new NestViewService({ deepNest, config });
   service.initialize();
