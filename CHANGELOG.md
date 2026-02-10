@@ -1,6 +1,12 @@
 # Deepnest Changelong
 (newest on top, breaking changes)
 
+2026-02-10 Version 1.5.7
+           Added keyboard shortcuts for Main View: 'n' (New Sheet), 'a' (Select All), 's' (Start Nest), 'i' (Import).
+           Added keyboard shortcuts for Nest View: 'a'/'s' (Stop/Start), 'b' (Back), 'e' (Export menu), '1'/'2'/'3' (Export SVG/DXF/JSON).
+           Added text labels to parts in Nest View and Exports showing index and dimensions.
+           Fixed DXF export to include text labels and position origin at bottom-left.
+           Improved text label visibility with dynamic sizing and counter-rotation.
 
 2023-05-15 rename `npm run` scripts: fullbuild->build-all, fullclean->clean-all
            introduced dist-all that includes a full clean rebuild with dist
