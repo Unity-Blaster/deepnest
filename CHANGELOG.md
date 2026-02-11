@@ -1,6 +1,15 @@
 # Deepnest Changelong
 (newest on top, breaking changes)
 
+2026-02-10 Version 1.5.10
+           Fixed macOS build issue by downgrading runner to macos-12.
+           Added "Shortcuts" tab to sidebar with detailed help content.
+           Improved text labels: Segoe UI, thin weight, better sizing logic, square alignment fix.
+           Optimized Add Sheet dialog: removed animation and focus delay.
+           Fixed layout shift on Windows when opening sheet dialog.
+           Added keyboard navigation for Quantity fields ('q', Tab/Shift+Tab, Esc/Enter).
+           Added "Check added sheets (after first)" setting.
+
 2026-02-10 Version 1.5.9
            Disabled startup notifications popup.
            Added scrollbar to #nestinfo in Nest View.
