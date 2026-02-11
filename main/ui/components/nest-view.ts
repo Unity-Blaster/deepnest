@@ -347,7 +347,7 @@ export class NestViewService {
             )}`,
           );
 
-          // Update text rotation to keep it horizontal
+          // Update text rotation to keep it horizontal and fit inside
           const text = partElement.querySelector("text");
           if (text) {
             const cx = part.bounds.x + part.bounds.width / 2;
@@ -356,6 +356,17 @@ export class NestViewService {
               "transform",
               `rotate(${-p.rotation} ${cx} ${cy})`,
             );
+
+            // Recalculate font size based on rotated width
+            const rad = (p.rotation * Math.PI) / 180;
+            const availableWidth =
+              part.bounds.width * Math.abs(Math.cos(rad)) +
+              part.bounds.height * Math.abs(Math.sin(rad));
+            const charCount = (text.textContent || "").length;
+            if (charCount > 0) {
+              const fontSize = (availableWidth * 0.8) / (0.5 * charCount);
+              text.setAttribute("font-size", String(fontSize));
+            }
           }
 
           // Add merge lines if present

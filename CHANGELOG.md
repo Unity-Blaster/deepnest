@@ -1,6 +1,13 @@
 # Deepnest Changelong
 (newest on top, breaking changes)
 
+2026-02-10 Version 1.5.8
+           Fixed 'a' key shortcut in Main View (Select All).
+           Added 's' key shortcut in Nest View (Toggle Start/Stop).
+           Improved Export Dropdown visibility/toggle behavior.
+           Refined dynamic font sizing for text labels to account for rotation.
+           Set DXF export properties: Layer "Layer 1", Color 7 (White), Linetype ByLayer.
+
 2026-02-10 Version 1.5.7
            Added keyboard shortcuts for Main View: 'n' (New Sheet), 'a' (Select All), 's' (Start Nest), 'i' (Import).
            Added keyboard shortcuts for Nest View: 'a'/'s' (Stop/Start), 'b' (Back), 'e' (Export menu), '1'/'2'/'3' (Export SVG/DXF/JSON).

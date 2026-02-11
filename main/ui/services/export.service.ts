@@ -516,6 +516,10 @@ export class ExportService {
       "http://www.w3.org/2000/svg",
       "g",
     );
+    if (options.forDxfConversion) {
+      containerGroup.setAttribute("id", "Layer 1");
+      containerGroup.setAttribute("stroke", "#ffffff");
+    }
     svg.appendChild(containerGroup);
 
     // Process each sheet placement
@@ -562,6 +566,13 @@ export class ExportService {
               node.setAttribute("href", relPath);
             }
             node.removeAttribute("data-href");
+          } else if (
+            options.forDxfConversion &&
+            node.tagName !== "g" &&
+            node.tagName !== "text"
+          ) {
+            // For DXF export, use inherit to map to BYBLOCK/BYLAYER
+            node.setAttribute("stroke", "inherit");
           }
 
           partGroup.appendChild(node);
@@ -587,7 +598,12 @@ export class ExportService {
 
         // Dynamic font size: target 80% of width
         const charCount = textContent.length;
-        const fontSize = (part.bounds.width * 0.8) / (0.5 * charCount);
+        // Recalculate font size based on rotated width
+        const rad = (p.rotation * Math.PI) / 180;
+        const availableWidth =
+          part.bounds.width * Math.abs(Math.cos(rad)) +
+          part.bounds.height * Math.abs(Math.sin(rad));
+        const fontSize = (availableWidth * 0.8) / (0.5 * charCount);
 
         text.setAttribute("x", String(cx));
         text.setAttribute("y", String(cy));
@@ -631,7 +647,7 @@ export class ExportService {
     this.applyDimensions(svg, svgWidth, svgHeight, options);
 
     // Apply line merging if configured
-    this.applyLineMerging(svg, nestResult);
+    this.applyLineMerging(svg, nestResult, options);
 
     return new XMLSerializer().serializeToString(svg);
   }
@@ -692,10 +708,12 @@ export class ExportService {
    * Apply line merging optimization if configured
    * @param svg - SVG element
    * @param nestResult - Nesting result with merged length info
+   * @param options - Export options
    */
   private applyLineMerging(
     svg: SVGSVGElement,
     nestResult: SelectableNestingResult,
+    options: ExportOptions = {},
   ): void {
     if (!this.config || !this.svgParser) {
       return;
@@ -715,6 +733,9 @@ export class ExportService {
       this.svgParser.mergeOverlap(svg, 0.1 * curveTolerance);
       this.svgParser.mergeLines(svg);
 
+      // Set stroke color (White for DXF to map to Color 7, Black otherwise)
+      const strokeColor = options.forDxfConversion ? "#ffffff" : "#000000";
+
       // Set stroke and fill for all non-group, non-image, non-text elements
       const elements = Array.prototype.slice.call(svg.children) as Element[];
       elements.forEach((e) => {
@@ -724,7 +745,7 @@ export class ExportService {
           e.tagName !== "text"
         ) {
           e.setAttribute("fill", "none");
-          e.setAttribute("stroke", "#000000");
+          e.setAttribute("stroke", strokeColor);
         }
       });
     }
