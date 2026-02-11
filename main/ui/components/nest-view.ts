@@ -273,7 +273,7 @@ export class NestViewService {
           const w = (part.bounds.width / scale) * unitScale;
           const h = (part.bounds.height / scale) * unitScale;
 
-          const textContent = `[${p.source}] ${w.toFixed(0)}x${h.toFixed(0)}${units}`;
+          const textContent = `[${p.source}] ${w.toFixed(0)}x${h.toFixed(0)}${units === "inch" ? "in" : "mm"}`;
           text.textContent = textContent;
 
           // Dynamic font size: target 80% of width
@@ -286,7 +286,8 @@ export class NestViewService {
           text.setAttribute("text-anchor", "middle");
           text.setAttribute("dominant-baseline", "middle");
           text.setAttribute("fill", "white");
-          text.setAttribute("font-family", "Arial, sans-serif");
+          text.setAttribute("font-family", "Segoe UI");
+          text.setAttribute("font-weight", "100");
           text.setAttribute("font-size", String(fontSize));
           text.setAttribute("transform", `rotate(${-p.rotation} ${cx} ${cy})`); // Counter-rotate to keep text horizontal
           text.setAttribute("style", "pointer-events: none;"); // Click through to part
@@ -352,19 +353,53 @@ export class NestViewService {
           if (text) {
             const cx = part.bounds.x + part.bounds.width / 2;
             const cy = part.bounds.y + part.bounds.height / 2;
+
+            // Align with longest dimension
+            // Calculate rotation to ensure text is upright or reading up (bottom on right)
+            const isSquare =
+              Math.abs(part.bounds.width - part.bounds.height) < 0.001;
+
+            let finalRotation;
+            let isVertical = false;
+
+            if (isSquare) {
+              // For squares, always align horizontally to the screen (bottom to window bottom)
+              finalRotation = -p.rotation;
+            } else {
+              isVertical = part.bounds.height > part.bounds.width;
+              const baseRotation = isVertical ? 90 : 0;
+
+              let screenRotation = (p.rotation + baseRotation) % 360;
+              if (screenRotation < 0) screenRotation += 360;
+
+              // If text is pointing Down (around 90) or Left (around 180), flip it 180 degrees
+              // Acceptable range is [315, 360] U [0, 45] (Right) and [225, 315] (Up)
+              // Bad range is roughly [45, 225]
+              finalRotation = baseRotation;
+              if (screenRotation > 45 && screenRotation < 225) {
+                finalRotation += 180;
+              }
+            }
+
             text.setAttribute(
               "transform",
-              `rotate(${-p.rotation} ${cx} ${cy})`,
+              `rotate(${finalRotation} ${cx} ${cy})`,
             );
 
-            // Recalculate font size based on rotated width
-            const rad = (p.rotation * Math.PI) / 180;
-            const availableWidth =
-              part.bounds.width * Math.abs(Math.cos(rad)) +
-              part.bounds.height * Math.abs(Math.sin(rad));
+            // Recalculate font size based on target dimension length and constraint in other dimension
+            const targetLength = isVertical
+              ? part.bounds.height
+              : part.bounds.width;
+            const targetHeight = isVertical
+              ? part.bounds.width
+              : part.bounds.height;
+
             const charCount = (text.textContent || "").length;
             if (charCount > 0) {
-              const fontSize = (availableWidth * 0.8) / (0.5 * charCount);
+              const fontSizeWidth = (targetLength * 0.8) / (0.5 * charCount);
+              const fontSizeHeight = targetHeight * 0.8;
+              const fontSize = Math.min(fontSizeWidth, fontSizeHeight);
+
               text.setAttribute("font-size", String(fontSize));
             }
           }

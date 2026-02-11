@@ -593,26 +593,54 @@ export class ExportService {
         const w = (part.bounds.width / scale) * unitScale;
         const h = (part.bounds.height / scale) * unitScale;
 
-        const textContent = `${p.source} ${w.toFixed(1)}x${h.toFixed(1)}`;
+        const textContent = `[${p.source}] ${w.toFixed(1)}x${h.toFixed(1)}${units === "inch" ? "in" : "mm"}`;
         text.textContent = textContent;
 
         // Dynamic font size: target 80% of width
         const charCount = textContent.length;
-        // Recalculate font size based on rotated width
-        const rad = (p.rotation * Math.PI) / 180;
-        const availableWidth =
-          part.bounds.width * Math.abs(Math.cos(rad)) +
-          part.bounds.height * Math.abs(Math.sin(rad));
-        const fontSize = (availableWidth * 0.8) / (0.5 * charCount);
+
+        // Align with longest dimension
+        const isSquare =
+          Math.abs(part.bounds.width - part.bounds.height) < 0.001;
+
+        let finalRotation;
+        let isVertical = false;
+
+        if (isSquare) {
+          finalRotation = -p.rotation;
+        } else {
+          isVertical = part.bounds.height > part.bounds.width;
+          const baseRotation = isVertical ? 90 : 0;
+
+          let screenRotation = (p.rotation + baseRotation) % 360;
+          if (screenRotation < 0) screenRotation += 360;
+
+          finalRotation = baseRotation;
+          if (screenRotation > 45 && screenRotation < 225) {
+            finalRotation += 180;
+          }
+        }
+
+        const targetLength = isVertical
+          ? part.bounds.height
+          : part.bounds.width;
+        const targetHeight = isVertical
+          ? part.bounds.width
+          : part.bounds.height;
+
+        const fontSizeWidth = (targetLength * 0.8) / (0.5 * charCount);
+        const fontSizeHeight = targetHeight * 0.8;
+        const fontSize = Math.min(fontSizeWidth, fontSizeHeight);
 
         text.setAttribute("x", String(cx));
         text.setAttribute("y", String(cy));
         text.setAttribute("text-anchor", "middle");
         text.setAttribute("dominant-baseline", "middle");
         text.setAttribute("fill", "#000000"); // Black for export
-        text.setAttribute("font-family", "Arial, sans-serif");
+        text.setAttribute("font-family", "Segoe UI");
+        text.setAttribute("font-weight", "100");
         text.setAttribute("font-size", String(fontSize));
-        text.setAttribute("transform", `rotate(${-p.rotation} ${cx} ${cy})`); // Counter-rotate to keep text horizontal
+        text.setAttribute("transform", `rotate(${finalRotation} ${cx} ${cy})`);
 
         partGroup.appendChild(text);
 

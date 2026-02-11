@@ -1,6 +1,16 @@
 # Deepnest Changelong
 (newest on top, breaking changes)
 
+2026-02-10 Version 1.5.9
+           Disabled startup notifications popup.
+           Added scrollbar to #nestinfo in Nest View.
+           Added keyboard navigation for Quantity fields ('q', Tab/Shift+Tab, Esc/Enter).
+           Added "Check added sheets (after first)" setting.
+           Improved text labels: Segoe UI, thin weight, better sizing logic, square alignment fix.
+           Optimized Add Sheet dialog: removed animation and focus delay.
+           Increased quantity input width to 4rem.
+           Fixed layout shift on Windows when opening sheet dialog.
+
 2026-02-10 Version 1.5.8
            Fixed 'a' key shortcut in Main View (Select All).
            Added 's' key shortcut in Nest View (Toggle Start/Stop).

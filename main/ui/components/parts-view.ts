@@ -39,11 +39,14 @@ interface PartsViewRactiveInstance {
   /** Get a value from the data context */
   get<K extends keyof PartsViewData>(keypath: K): PartsViewData[K];
   /** Set a value in the data context */
-  set<K extends keyof PartsViewData>(keypath: K, value: PartsViewData[K]): Promise<void>;
+  set<K extends keyof PartsViewData>(
+    keypath: K,
+    value: PartsViewData[K],
+  ): Promise<void>;
   /** Register an event handler with Ractive-specific event signature */
   on(
     eventName: string,
-    handler: (event: RactiveEvent, ...args: unknown[]) => boolean | void
+    handler: (event: RactiveEvent, ...args: unknown[]) => boolean | void,
   ): void;
 }
 
@@ -61,7 +64,7 @@ declare const Ractive: {
  */
 declare function svgPanZoom(
   selector: string,
-  options: SvgPanZoomOptions
+  options: SvgPanZoomOptions,
 ): SvgPanZoomInstance;
 
 /**
@@ -321,14 +324,12 @@ export class PartsViewService {
   private setupZoomControls(importIndex: number): void {
     const deepNest = this.deepNest;
 
-    const zoomInBtn = getElement<HTMLElement>(
-      `#import-${importIndex} .zoomin`
-    );
+    const zoomInBtn = getElement<HTMLElement>(`#import-${importIndex} .zoomin`);
     const zoomOutBtn = getElement<HTMLElement>(
-      `#import-${importIndex} .zoomout`
+      `#import-${importIndex} .zoomout`,
     );
     const zoomResetBtn = getElement<HTMLElement>(
-      `#import-${importIndex} .zoomreset`
+      `#import-${importIndex} .zoomreset`,
     );
 
     if (zoomInBtn) {
@@ -397,14 +398,14 @@ export class PartsViewService {
    */
   attachSort(): void {
     const headers = getElements<HTMLTableCellElement>(
-      SELECTORS.PARTS_TABLE_HEADERS
+      SELECTORS.PARTS_TABLE_HEADERS,
     );
 
     headers.forEach((header) => {
       header.addEventListener("click", () => {
-        const sortField = header.getAttribute(
-          DATA_ATTRIBUTES.SORT_FIELD
-        ) as keyof Part | null;
+        const sortField = header.getAttribute(DATA_ATTRIBUTES.SORT_FIELD) as
+          | keyof Part
+          | null;
 
         if (!sortField) {
           return;
@@ -417,7 +418,12 @@ export class PartsViewService {
           const av = a[sortField];
           const bv = b[sortField];
 
-          if (av === undefined || av === null || bv === undefined || bv === null) {
+          if (
+            av === undefined ||
+            av === null ||
+            bv === undefined ||
+            bv === null
+          ) {
             return 0;
           }
 
@@ -570,22 +576,25 @@ export class PartsViewService {
     const deepNest = this.deepNest;
 
     // Handle part selection on click/mouseover
-    ractive.on("selecthandler", (e: RactiveEvent, ...args: unknown[]): boolean | void => {
-      const part = args[0] as Part;
-      // Don't handle if clicking on an input
-      if ((e.original.target as HTMLElement).nodeName === "INPUT") {
-        return true;
-      }
-
-      if (this.mouseDown > 0 || e.original.type === "mousedown") {
-        this.togglePart(part);
-        ractive.update("parts");
-        if (this.throttledUpdate) {
-          this.throttledUpdate();
+    ractive.on(
+      "selecthandler",
+      (e: RactiveEvent, ...args: unknown[]): boolean | void => {
+        const part = args[0] as Part;
+        // Don't handle if clicking on an input
+        if ((e.original.target as HTMLElement).nodeName === "INPUT") {
+          return true;
         }
-      }
-      return;
-    });
+
+        if (this.mouseDown > 0 || e.original.type === "mousedown") {
+          this.togglePart(part);
+          ractive.update("parts");
+          if (this.throttledUpdate) {
+            this.throttledUpdate();
+          }
+        }
+        return;
+      },
+    );
 
     // Handle select all toggle
     ractive.on("selectall", () => {
@@ -608,21 +617,24 @@ export class PartsViewService {
     });
 
     // Handle import tab selection
-    ractive.on("importselecthandler", (_e: RactiveEvent, ...args: unknown[]): boolean | void => {
-      const im = args[0] as ImportedFile;
-      if (im.selected) {
-        return false;
-      }
+    ractive.on(
+      "importselecthandler",
+      (_e: RactiveEvent, ...args: unknown[]): boolean | void => {
+        const im = args[0] as ImportedFile;
+        if (im.selected) {
+          return false;
+        }
 
-      deepNest.imports.forEach((i) => {
-        i.selected = false;
-      });
+        deepNest.imports.forEach((i) => {
+          i.selected = false;
+        });
 
-      im.selected = true;
-      ractive.update("imports");
-      this.applyZoom();
-      return;
-    });
+        im.selected = true;
+        ractive.update("imports");
+        this.applyZoom();
+        return;
+      },
+    );
 
     // Handle import deletion
     ractive.on("importdelete", (_e: RactiveEvent, ...args: unknown[]) => {
@@ -663,6 +675,55 @@ export class PartsViewService {
   }
 
   /**
+   * Set up custom keyboard navigation for quantity inputs
+   */
+  private setupQuantityNavigation(): void {
+    const partsTable = getElement<HTMLElement>(SELECTORS.PARTS_TABLE);
+    if (!partsTable) return;
+
+    partsTable.addEventListener("keydown", (e) => {
+      if (e.key !== "Tab" && e.key !== "Escape" && e.key !== "Enter") return;
+
+      const target = e.target as HTMLInputElement;
+      if (target.tagName !== "INPUT" || target.type !== "number") return;
+
+      if (e.key === "Escape" || e.key === "Enter") {
+        target.blur();
+        e.preventDefault();
+        return;
+      }
+
+      // Find all quantity inputs
+      const allQtyInputs = Array.from(
+        document.querySelectorAll(
+          `${SELECTORS.PARTS_TABLE} tbody tr td:nth-child(4) input[type=number]`,
+        ),
+      ) as HTMLInputElement[];
+
+      const currentIndex = allQtyInputs.indexOf(target);
+      if (currentIndex === -1) return;
+
+      e.preventDefault();
+
+      let nextIndex: number;
+      if (e.shiftKey) {
+        // Shift+Tab: Go backwards
+        nextIndex = currentIndex - 1;
+      } else {
+        // Tab: Go forwards
+        nextIndex = currentIndex + 1;
+      }
+
+      // Check bounds
+      if (nextIndex >= 0 && nextIndex < allQtyInputs.length) {
+        const nextInput = allQtyInputs[nextIndex];
+        nextInput.focus();
+        nextInput.select();
+      }
+    });
+  }
+
+  /**
    * Initialize the parts view service
    * Sets up Ractive, event handlers, and keyboard shortcuts
    */
@@ -676,6 +737,7 @@ export class PartsViewService {
     this.createThrottledUpdate();
     this.bindRactiveEvents();
     this.setupKeyboardEvents();
+    this.setupQuantityNavigation();
 
     this.initialized = true;
   }
@@ -718,7 +780,7 @@ export class PartsViewService {
  * @returns New PartsViewService instance
  */
 export function createPartsViewService(
-  options: PartsViewOptions
+  options: PartsViewOptions,
 ): PartsViewService {
   return PartsViewService.create(options);
 }
@@ -742,7 +804,7 @@ export function createPartsViewService(
 export function initializePartsView(
   deepNest: DeepNestInstance,
   config: ConfigObject,
-  resizeCallback?: ResizeCallback
+  resizeCallback?: ResizeCallback,
 ): PartsViewService {
   const service = new PartsViewService({ deepNest, config, resizeCallback });
   service.initialize();

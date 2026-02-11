@@ -1018,10 +1018,10 @@ function initializeKeyboardShortcuts(): void {
       if (key === "n") {
         // 'n': Add Sheet
         getElement<HTMLElement>("#addsheet")?.click();
-        // Autofocus the width input
-        setTimeout(() => {
-          getElement<HTMLInputElement>("#sheetwidth")?.focus();
-        }, 100);
+
+        // Autofocus the width input immediately
+        getElement<HTMLInputElement>("#sheetwidth")?.focus();
+
         e.preventDefault();
       } else if (key === "a") {
         // 'a': Select All (using ID selector)
@@ -1035,6 +1035,25 @@ function initializeKeyboardShortcuts(): void {
         // 'i': Import
         getElement<HTMLElement>("#import")?.click();
         e.preventDefault();
+      } else if (key === "q") {
+        // 'q': Focus first sheet quantity
+        const rows = document.querySelectorAll("#partscroll table tbody tr");
+        for (const row of Array.from(rows)) {
+          const checkbox = row.querySelector(
+            "td:nth-child(3) input[type=checkbox]",
+          ) as HTMLInputElement;
+          if (checkbox && checkbox.checked) {
+            const qtyInput = row.querySelector(
+              "td:nth-child(4) input[type=number]",
+            ) as HTMLInputElement;
+            if (qtyInput) {
+              qtyInput.focus();
+              qtyInput.select();
+              e.preventDefault();
+              break;
+            }
+          }
+        }
       }
     }
   });

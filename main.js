@@ -203,10 +203,13 @@ function createNotificationWindow(notification) {
 }
 
 async function runNotificationCheck() {
+  return;
+  /*
   const notification = await notificationService.checkForNotifications();
   if (notification) {
     createNotificationWindow(notification);
   }
+  */
 }
 
 

@@ -44,6 +44,7 @@ export const DEFAULT_CONFIG: Readonly<UIConfig> = {
   exportWithSheetBoundboarders: false,
   exportWithSheetsSpace: false,
   exportWithSheetsSpaceValue: 0.3937007874015748, // 10mm in inches
+  checkNewSheetsAfterFirst: true,
 };
 
 /**
@@ -56,6 +57,7 @@ export const BOOLEAN_CONFIG_KEYS: ReadonlyArray<keyof UIConfig> = [
   "useQuantityFromFileName",
   "exportWithSheetBoundboarders",
   "exportWithSheetsSpace",
+  "checkNewSheetsAfterFirst",
 ];
 
 /**
@@ -96,6 +98,7 @@ export class ConfigService implements ConfigObject {
   exportWithSheetBoundboarders: boolean;
   exportWithSheetsSpace: boolean;
   exportWithSheetsSpaceValue: number;
+  checkNewSheetsAfterFirst: boolean;
   access_token?: string;
   id_token?: string;
 
@@ -127,9 +130,11 @@ export class ConfigService implements ConfigObject {
     this.conversionServer = this.config.conversionServer;
     this.useSvgPreProcessor = this.config.useSvgPreProcessor;
     this.useQuantityFromFileName = this.config.useQuantityFromFileName;
-    this.exportWithSheetBoundboarders = this.config.exportWithSheetBoundboarders;
+    this.exportWithSheetBoundboarders =
+      this.config.exportWithSheetBoundboarders;
     this.exportWithSheetsSpace = this.config.exportWithSheetsSpace;
     this.exportWithSheetsSpaceValue = this.config.exportWithSheetsSpaceValue;
+    this.checkNewSheetsAfterFirst = this.config.checkNewSheetsAfterFirst;
   }
 
   /**
@@ -145,7 +150,7 @@ export class ConfigService implements ConfigObject {
     if (this.ipcRenderer) {
       try {
         const savedConfig = (await this.ipcRenderer.invoke(
-          IPC_CHANNELS.READ_CONFIG
+          IPC_CHANNELS.READ_CONFIG,
         )) as Partial<UIConfig> | null;
 
         if (savedConfig && typeof savedConfig === "object") {
@@ -181,7 +186,10 @@ export class ConfigService implements ConfigObject {
    * @param key - The configuration key
    * @param value - The value to set
    */
-  private setConfigValue<K extends keyof UIConfig>(key: K, value: UIConfig[K]): void {
+  private setConfigValue<K extends keyof UIConfig>(
+    key: K,
+    value: UIConfig[K],
+  ): void {
     // Use Object.assign to bypass strict type checking for dynamic assignment
     Object.assign(this.config, { [key]: value });
     Object.assign(this, { [key]: value });
@@ -210,9 +218,11 @@ export class ConfigService implements ConfigObject {
     this.conversionServer = this.config.conversionServer;
     this.useSvgPreProcessor = this.config.useSvgPreProcessor;
     this.useQuantityFromFileName = this.config.useQuantityFromFileName;
-    this.exportWithSheetBoundboarders = this.config.exportWithSheetBoundboarders;
+    this.exportWithSheetBoundboarders =
+      this.config.exportWithSheetBoundboarders;
     this.exportWithSheetsSpace = this.config.exportWithSheetsSpace;
     this.exportWithSheetsSpaceValue = this.config.exportWithSheetsSpaceValue;
+    this.checkNewSheetsAfterFirst = this.config.checkNewSheetsAfterFirst;
     this.access_token = this.config.access_token;
     this.id_token = this.config.id_token;
   }
@@ -223,11 +233,17 @@ export class ConfigService implements ConfigObject {
    * @param key - Optional key to retrieve specific value
    * @returns The value for the key, or entire config if no key provided
    */
-  getSync<K extends keyof UIConfig>(key?: K): K extends keyof UIConfig ? UIConfig[K] : UIConfig {
+  getSync<K extends keyof UIConfig>(
+    key?: K,
+  ): K extends keyof UIConfig ? UIConfig[K] : UIConfig {
     if (key === undefined) {
-      return { ...this.config } as K extends keyof UIConfig ? UIConfig[K] : UIConfig;
+      return { ...this.config } as K extends keyof UIConfig
+        ? UIConfig[K]
+        : UIConfig;
     }
-    return this.config[key] as K extends keyof UIConfig ? UIConfig[K] : UIConfig;
+    return this.config[key] as K extends keyof UIConfig
+      ? UIConfig[K]
+      : UIConfig;
   }
 
   /**
@@ -238,7 +254,7 @@ export class ConfigService implements ConfigObject {
    */
   setSync<K extends keyof UIConfig>(
     keyOrObject: K | Partial<UIConfig>,
-    value?: UIConfig[K]
+    value?: UIConfig[K],
   ): void {
     if (typeof keyOrObject === "object") {
       // Set multiple values from object
@@ -387,7 +403,7 @@ export class ConfigService implements ConfigObject {
  * @returns Promise resolving to initialized ConfigService
  */
 export async function createConfigService(
-  ipcRenderer: IpcRenderer
+  ipcRenderer: IpcRenderer,
 ): Promise<ConfigService> {
   return ConfigService.create(ipcRenderer);
 }

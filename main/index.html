@@ -124,9 +124,86 @@
         <li id="home_tab" class="active" data-page="home"></li>
         <li id="config_tab" data-page="config"></li>
         <!--<li id="account_tab" data-page="account"></li>-->
+        <li id="shortcuts_tab" data-page="shortcuts"></li>
         <li id="info_tab" data-page="info"></li>
         <li id="darkmode_tab"></li>
       </ul>
+
+      <div id="shortcuts" class="page">
+        <div style="padding: 2em; overflow-y: auto; height: 100%">
+          <h1>Keyboard Shortcuts</h1>
+
+          <h2>Main View</h2>
+          <dl class="shortcuts-list">
+            <dt><kbd>n</kbd></dt>
+            <dd>Open <strong>Add Sheet</strong> dialog (auto-focuses width)</dd>
+            <dt><kbd>a</kbd></dt>
+            <dd><strong>Select All</strong> parts</dd>
+            <dt><kbd>s</kbd></dt>
+            <dd><strong>Start Nesting</strong></dd>
+            <dt><kbd>i</kbd></dt>
+            <dd><strong>Import</strong> files</dd>
+            <dt><kbd>q</kbd></dt>
+            <dd>Focus <strong>first sheet's quantity</strong> input</dd>
+            <dt><kbd>Tab</kbd></dt>
+            <dd>Move to <strong>next quantity</strong> input</dd>
+            <dt><kbd>Shift</kbd> + <kbd>Tab</kbd></dt>
+            <dd>Move to <strong>previous quantity</strong> input</dd>
+            <dt><kbd>Esc</kbd></dt>
+            <dd>Blur quantity input</dd>
+          </dl>
+
+          <h2>Sheet Dialog</h2>
+          <dl class="shortcuts-list">
+            <dt><kbd>Enter</kbd></dt>
+            <dd><strong>Confirm</strong> adding sheet</dd>
+            <dt><kbd>Esc</kbd></dt>
+            <dd><strong>Cancel</strong> adding sheet</dd>
+          </dl>
+
+          <h2>Nest View</h2>
+          <dl class="shortcuts-list">
+            <dt><kbd>a</kbd> / <kbd>s</kbd></dt>
+            <dd><strong>Stop/Start</strong> nesting</dd>
+            <dt><kbd>b</kbd></dt>
+            <dd><strong>Back</strong> to Main View</dd>
+            <dt><kbd>e</kbd></dt>
+            <dd>Toggle <strong>Export Menu</strong></dd>
+            <dt><kbd>1</kbd></dt>
+            <dd>Export <strong>SVG</strong></dd>
+            <dt><kbd>2</kbd></dt>
+            <dd>Export <strong>DXF</strong></dd>
+            <dt><kbd>3</kbd></dt>
+            <dd>Export <strong>JSON</strong></dd>
+            <dt><kbd>Esc</kbd></dt>
+            <dd>Close Export Menu</dd>
+          </dl>
+
+          <h1>Quality of Life Features</h1>
+          <ul>
+            <li>
+              <strong>Part Labels:</strong> Parts in Nest View and exports show
+              their index and dimensions.
+            </li>
+            <li>
+              <strong>Dynamic Text Sizing:</strong> Labels automatically size to
+              fit inside parts.
+            </li>
+            <li>
+              <strong>Smart Orientation:</strong> Text rotates to align with the
+              part's longest dimension and stays readable.
+            </li>
+            <li>
+              <strong>DXF Export:</strong> Adjusted to use "Layer 1", White
+              color (7), ByLayer linetype, and bottom-left origin.
+            </li>
+            <li>
+              <strong>Sheet Auto-check:</strong> New setting to control if added
+              sheets are checked by default.
+            </li>
+          </ul>
+        </div>
+      </div>
 
       <div id="home" class="page active">
         <div id="homecontent"></div>
@@ -462,6 +539,11 @@
             </dt>
             <dd>
               <input type="checkbox" data-config="useQuantityFromFileName" />
+            </dd>
+
+            <dt>Check added sheets (after first)?</dt>
+            <dd>
+              <input type="checkbox" data-config="checkNewSheetsAfterFirst" />
             </dd>
           </dl>
 

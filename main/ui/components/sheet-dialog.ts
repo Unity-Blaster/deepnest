@@ -203,8 +203,12 @@ export class SheetDialogService {
    * Clear the input fields and remove error states
    */
   private clearInputs(): void {
-    const widthInput = getElement<HTMLInputElement>(SELECTORS.SHEET_WIDTH_INPUT);
-    const heightInput = getElement<HTMLInputElement>(SELECTORS.SHEET_HEIGHT_INPUT);
+    const widthInput = getElement<HTMLInputElement>(
+      SELECTORS.SHEET_WIDTH_INPUT,
+    );
+    const heightInput = getElement<HTMLInputElement>(
+      SELECTORS.SHEET_HEIGHT_INPUT,
+    );
 
     if (widthInput) {
       removeClass(widthInput, CSS_CLASSES.ERROR);
@@ -260,7 +264,17 @@ export class SheetDialogService {
     const parts = this.deepNest.importsvg(null, null, svgString);
     if (parts.length > 0) {
       const sheet = parts[0];
-      sheet.sheet = true;
+
+      // Determine if this sheet should be checked (used as a bin)
+      const existingSheets = this.deepNest.parts.filter((p) => p.sheet).length;
+
+      // If it's the first sheet, always check it (logic implies we need at least one).
+      // If subsequent, use config.
+      if (existingSheets === 0) {
+        sheet.sheet = true;
+      } else {
+        sheet.sheet = !!this.config.getSync("checkNewSheetsAfterFirst");
+      }
     }
 
     return true;
@@ -272,8 +286,12 @@ export class SheetDialogService {
    * @returns False to prevent default behavior, undefined otherwise
    */
   handleConfirm(): boolean | undefined {
-    const widthInput = getElement<HTMLInputElement>(SELECTORS.SHEET_WIDTH_INPUT);
-    const heightInput = getElement<HTMLInputElement>(SELECTORS.SHEET_HEIGHT_INPUT);
+    const widthInput = getElement<HTMLInputElement>(
+      SELECTORS.SHEET_WIDTH_INPUT,
+    );
+    const heightInput = getElement<HTMLInputElement>(
+      SELECTORS.SHEET_HEIGHT_INPUT,
+    );
 
     if (!widthInput || !heightInput) {
       return false;
@@ -389,7 +407,7 @@ export class SheetDialogService {
  * @returns New SheetDialogService instance
  */
 export function createSheetDialogService(
-  options: SheetDialogOptions
+  options: SheetDialogOptions,
 ): SheetDialogService {
   return SheetDialogService.create(options);
 }
@@ -423,7 +441,7 @@ export function initializeSheetDialog(
   deepNest: DeepNestInstance,
   config: ConfigObject,
   ractive?: RactiveInstance<PartsViewData>,
-  resizeCallback?: ResizeCallback
+  resizeCallback?: ResizeCallback,
 ): SheetDialogService {
   const service = new SheetDialogService({
     deepNest,
